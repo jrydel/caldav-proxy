@@ -13,4 +13,6 @@ pipelines:
             caches:
               - node
             script:
+              - npm install -g yarn
+              - yarn
               - yarn build
