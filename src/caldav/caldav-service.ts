@@ -3,33 +3,24 @@ import moment from 'moment';
 
 import { CaldavConfig } from '../types';
 
-export interface CalDavService {
+interface CaldavFetcher {
+    fetchEventByUid(config: CaldavConfig, eventUid: string): Promise<Response>;
 
-    getEventByUid(eventUid: string): Promise<Response>;
+    fetchEvents(config: CaldavConfig): Promise<Response>;
 
-    getEvents(): Promise<Response>;
+    fetchEventsBetween(config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Response>;
 
-    getEventsBetween(startDate: Date, endDate?: Date): Promise<Response>;
+    fetchUpdateEvent(config: CaldavConfig, eventData: string, eventUid: string): Promise<Response>;
 
-    createUpdateEvent(eventData: string, eventUid: string): Promise<Response>;
-
-    deleteEvent(eventUid: string): Promise<Response>;
+    fetchDeleteEvent(config: CaldavConfig, eventUid: string): Promise<Response>;
 }
 
-const auth = (username: string, password: string) => Buffer.from(username + ':' + password).toString('base64');
+export class CaldavFetcherImpl implements CaldavFetcher {
 
-export class DefaultCalDavService implements CalDavService {
-
-    caldavConfig: CaldavConfig;
-
-    constructor(caldavConfig: CaldavConfig) {
-        this.caldavConfig = caldavConfig;
-    }
-
-    getEventByUid = async (eventUid: string): Promise<Response> => {
+    fetchEventByUid = async (config: CaldavConfig, eventUid: string): Promise<Response> => {
         // Method for getting single event
         // Response status upon successfull request is 200
-        const url = `${this.caldavConfig.url}`;
+        const url = `${config.url}`;
 
         const xml = '<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">' +
             '<D:prop xmlns:D="DAV:">' +
@@ -50,7 +41,7 @@ export class DefaultCalDavService implements CalDavService {
         return await fetch(url, {
             method: 'REPORT',
             headers: {
-                'Authorization': `basic ${auth(this.caldavConfig.username, this.caldavConfig.password)}`,
+                'Authorization': `basic ${config.auth}`,
                 'Content-Type': 'text/xml; charset=utf-8',
                 'Depth': '1'
             },
@@ -58,11 +49,9 @@ export class DefaultCalDavService implements CalDavService {
         });
     };
 
-    getEvents = async (): Promise<Response> => {
+    fetchEvents = async (config: CaldavConfig): Promise<Response> => {
         // Method for getting all events in calendar
         // Response status upon successfull request is 207
-
-        const url = this.caldavConfig.url;
 
         const xml = '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">' +
             '<d:prop>' +
@@ -76,10 +65,10 @@ export class DefaultCalDavService implements CalDavService {
             '</c:filter>' +
             '</c:calendar-query>';
 
-        return await fetch(url, {
+        return await fetch(config.url, {
             method: 'REPORT',
             headers: {
-                'Authorization': `basic ${auth(this.caldavConfig.username, this.caldavConfig.password)}`,
+                'Authorization': `basic ${config.auth}`,
                 'Content-type': 'application/xml; charset=utf-8',
                 'Prefer': 'return-minimal',
                 'Depth': '1',
@@ -88,14 +77,12 @@ export class DefaultCalDavService implements CalDavService {
         });
     };
 
-    getEventsBetween = async (startDate: Date, endDate?: Date): Promise<Response> => {
+    fetchEventsBetween = async (config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Response> => {
         // Method for getting events from calendar in certain time range
         // Response status upon successfull request is 207
         const startDateString = moment(startDate).utc().format('YYYYMMDD[T]HHmmss[Z]');
         const endDateString = (endDate) ? moment(endDate).utc().format('YYYYMMDD[T]HHmmss[Z]') : null;
         const endTimeRange = (endDateString) ? ` end="${endDateString}"` : '';
-
-        const url = this.caldavConfig.url;
 
         const xml = '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">' +
             '<d:prop>' +
@@ -111,10 +98,10 @@ export class DefaultCalDavService implements CalDavService {
             '</c:filter>' +
             '</c:calendar-query>';
 
-        return await fetch(url, {
+        return await fetch(config.url, {
             method: 'REPORT',
             headers: {
-                'Authorization': `basic ${auth(this.caldavConfig.username, this.caldavConfig.password)}`,
+                'Authorization': `basic ${config.auth}`,
                 'Content-type': 'application/xml; charset=utf-8',
                 'Prefer': 'return-minimal',
                 'Depth': '1',
@@ -123,30 +110,30 @@ export class DefaultCalDavService implements CalDavService {
         });
     };
 
-    createUpdateEvent = async (eventData: string, eventUid: string): Promise<Response> => {
+    fetchUpdateEvent = async (config: CaldavConfig, eventData: string, eventUid: string): Promise<Response> => {
         // Method for creating or updating single event
         // Response status upon successfull request 204 - updated or 201 - created
-        const url = `${this.caldavConfig.url}${eventUid}`;
+        const url = `${config.url}${eventUid}`;
 
         return await fetch(url, {
             method: 'PUT',
             headers: {
-                'Authorization': `basic ${auth(this.caldavConfig.username, this.caldavConfig.password)}`,
+                'Authorization': `basic ${config.auth}`,
                 'Content-Type': 'text/calendar; charset=utf-8'
             },
             body: eventData
         });
     };
 
-    deleteEvent = async (eventUid: string): Promise<Response> => {
+    fetchDeleteEvent = async (config: CaldavConfig, eventUid: string): Promise<Response> => {
         // Method for deleting single event
         // Response status upon successfull request is 204
-        const url = `${this.caldavConfig.url}${eventUid}`;
+        const url = `${config.url}${eventUid}`;
 
         return await fetch(url, {
             method: 'DELETE',
             headers: {
-                'Authorization': `basic ${auth(this.caldavConfig.username, this.caldavConfig.password)}`,
+                'Authorization': `basic ${config.auth}`,
             },
         });
     };

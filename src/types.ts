@@ -1,7 +1,6 @@
 export interface CaldavConfig {
     url: string;
-    username: string;
-    password: string;
+    auth: string;
 }
 
 export interface CaldavEvent {
@@ -16,4 +15,13 @@ export interface Attendee {
     email: string;
     displayName?: string;
     status?: AtendeeStatus;
+}
+
+export interface Event {
+    id: string;
+    name: string;
+    start: Date;
+    end: Date;
+    organiser: { id: string, name: string };
+    attendee: { id: string, name: string }[];
 }

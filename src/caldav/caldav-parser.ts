@@ -2,17 +2,17 @@ import { parseStringPromise } from 'xml2js';
 
 import { CaldavEvent } from '../types';
 
-export interface CalDavParser {
-    parseListOfEvents(responseData: string): Promise<CaldavEvent[]>;
-
-    parseEvent(responseData: string): Promise<CaldavEvent>;
-}
-
 const STATUS_OK = 'HTTP/1.1 200 OK';
 
-export class DefaultCalDavParser implements CalDavParser {
+export interface CaldavParser {
+    parseCalEvents(responseData: string): Promise<CaldavEvent[]>;
 
-    parseListOfEvents = async (responseData: string): Promise<CaldavEvent[]> => {
+    parseCalEvent(responseData: string): Promise<CaldavEvent>;
+}
+
+export class CaldavParserImpl implements CaldavParser {
+
+    parseCalEvents = async (responseData: string): Promise<CaldavEvent[]> => {
         try {
             const events = [];
             const xml = await parseStringPromise(responseData);
@@ -31,9 +31,9 @@ export class DefaultCalDavParser implements CalDavParser {
         } catch (e) {
             throw new Error(`Error parsing events: ${e}`)
         }
-    };
+    }
 
-    parseEvent = async (responseData: string): Promise<CaldavEvent> => {
+    parseCalEvent = async (responseData: string): Promise<CaldavEvent> => {
         try {
             const xml = await parseStringPromise(responseData);
             const url = xml['D:multistatus']['D:response'][0]['D:href'][0];
@@ -48,5 +48,5 @@ export class DefaultCalDavParser implements CalDavParser {
         } catch (err) {
             throw new Error(`Error parsing event: ${err}`);
         }
-    };
+    }
 }

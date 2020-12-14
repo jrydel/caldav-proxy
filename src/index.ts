@@ -1,32 +1,31 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 
-import { DefaultCalDavClient } from './fetcher.js';
+import { deleteEvent, getEventByUid, getEvents } from './fetcher.js';
 
 const app = express();
 
 const corsMiddleware = cors({ origin: 'http://localhost:3000', optionsSuccessStatus: 200 });
 app.use(corsMiddleware);
 
-const caldavClient = new DefaultCalDavClient({ url: 'https://mail.uan.cz/SOGo/dav/jednacka3/Calendar/personal/', username: 'jednacka3', password: 'jednacka' });
-
 app.get('/getEvent', async (req: Request, res: Response) => {
-  const { id } = req.query;
+  const { url, auth, id } = req.query;
   if (!id) {
     res.status(500).json({ 'message': 'Query params "id" must be valid UID.' });
   }
 
   try {
-    const event = await caldavClient.getEventByUid(id as string);
+    const event = await getEventByUid({ url: url as string, auth: auth as string }, id as string);
     res.status(200).json(event);
   } catch (e) {
     res.status(500).json(e.message);
   }
 });
 
-app.get('/getEvents', async (_req: Request, res: Response) => {
+app.get('/getEvents', async (req: Request, res: Response) => {
+  const { url, auth } = req.query;
   try {
-    const events = await caldavClient.getEvents();
+    const events = await getEvents({ url: url as string, auth: auth as string });
     res.status(200).json(events);
   } catch (e) {
     res.status(500).json(e.message);
@@ -34,13 +33,13 @@ app.get('/getEvents', async (_req: Request, res: Response) => {
 });
 
 app.get('/getEventsBetween', async (req: Request, res: Response) => {
-  const { start, end } = req.query;
+  const { url, auth, start, end } = req.query;
   if (!start || !end) {
     res.status(500).json({ 'message': 'Query params "start", "end" must be valid dates.' });
   }
 
   try {
-    const events = await caldavClient.getEvents();
+    const events = await getEvents({ url: url as string, auth: auth as string });
     res.status(200).json(events);
   } catch (e) {
     res.status(500).json(e.message);
@@ -48,13 +47,13 @@ app.get('/getEventsBetween', async (req: Request, res: Response) => {
 });
 
 app.get('/deleteEvent', async (req: Request, res: Response) => {
-  const { id } = req.query;
+  const { url, auth, id } = req.query;
   if (!id) {
     res.status(500).json({ 'message': 'Query params "id" must be valid UID.' });
   }
 
   try {
-    await caldavClient.deleteEvent(id as string);
+    await deleteEvent({ url: url as string, auth: auth as string }, id as string);
     res.status(200).send();
   } catch (e) {
     res.status(500).json(e.message);
