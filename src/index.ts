@@ -22,7 +22,7 @@ app.get('/getEvent', async (req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json(e.message);
   }
-})
+});
 
 app.get('/getEvents', async (_req: Request, res: Response) => {
   try {
@@ -42,6 +42,20 @@ app.get('/getEventsBetween', async (req: Request, res: Response) => {
   try {
     const events = await caldavClient.getEvents();
     res.status(200).json(events);
+  } catch (e) {
+    res.status(500).json(e.message);
+  }
+});
+
+app.get('/deleteEvent', async (req: Request, res: Response) => {
+  const { id } = req.query;
+  if (!id) {
+    res.status(500).json({ 'message': 'Query params "id" must be valid UID.' });
+  }
+
+  try {
+    await caldavClient.deleteEvent(id as string);
+    res.status(200).send();
   } catch (e) {
     res.status(500).json(e.message);
   }

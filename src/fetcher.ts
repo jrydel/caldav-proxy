@@ -66,7 +66,7 @@ export class DefaultCalDavClient implements CalDavClient {
         try {
             const response = await this.service.getEvents();
             if (response.status === 207) {
-                return await this.parseListOfEvents(await response.text(), 'ListAllEvents');
+                return await this.parseListOfEvents(await response.text());
             }
             throw new Error(`Unexpected response status: ${response.status}`);
         } catch (e) {
@@ -78,7 +78,7 @@ export class DefaultCalDavClient implements CalDavClient {
         try {
             const response = await this.service.getEventsBetween(startDate, endDate);
             if (response.status === 207) {
-                return this.parseListOfEvents(await response.text(), 'ListEventsInTimeRange');
+                return this.parseListOfEvents(await response.text());
             }
             throw new Error(`Unexpected response status: ${response.status}`);
         } catch (e) {
@@ -86,33 +86,6 @@ export class DefaultCalDavClient implements CalDavClient {
         }
     };
 
-
-    // deleteEvent = async (eventUrl: string): Promise<void> => {
-    //     try {
-    //         const response = await this.service.deleteEvent(eventUrl);
-
-    //         if (response.status === 204) {
-    //             console.info(`CalDavClient.DeleteEvent: Successfully deleted event ${eventUrl}. `);
-    //             return;
-    //         }
-    //         throw new Error(`Unexpected response status: ${response.status}`);
-    //     } catch (e) {
-    //         throw new Error(`CalDavClient.DeleteEvent: ${e.message}. `);
-    //     }
-    // };
-
-    // multiGetEvents = async (eventUrls: string[]): Promise<ICAL.Event[]> => {
-    //     try {
-    //         const response = await this.service.multiGetEvents(eventUrls);
-
-    //         if (response.status === 207) {
-    //             return await this.parseListOfEvents(await response.text(), 'MultiGetEvents');
-    //         }
-    //         throw new Error(`Unexpected response status: ${response.status}`);
-    //     } catch (e) {
-    //         throw new Error(`CalDavClient.ListEventsInTimRange: ${e.message}. `);
-    //     }
-    // };
 
     // createEvent = async (eventUrl: string, id: string, referenceIds: string[], title: string, description: string, location: string, startDate: ICAL.TimeJsonData, endDate: ICAL.TimeJsonData, attendees: Attendee[], categories: string[]): Promise<void> => {
     //     try {
@@ -194,7 +167,32 @@ export class DefaultCalDavClient implements CalDavClient {
     //     }
     // };
 
-    private parseListOfEvents = async (responseData: string, method: string): Promise<Record<string, CalendarComponent>[]> => {
+    deleteEvent = async (eventUrl: string): Promise<void> => {
+        try {
+            const response = await this.service.deleteEvent(eventUrl);
+            if (response.status === 204) {
+                return;
+            }
+            throw new Error(`Unexpected response status: ${response.status}`);
+        } catch (e) {
+            throw new Error(`CalDavClient.DeleteEvent: ${e.message}. `);
+        }
+    };
+
+    // multiGetEvents = async (eventUrls: string[]): Promise<ICAL.Event[]> => {
+    //     try {
+    //         const response = await this.service.multiGetEvents(eventUrls);
+
+    //         if (response.status === 207) {
+    //             return await this.parseListOfEvents(await response.text(), 'MultiGetEvents');
+    //         }
+    //         throw new Error(`Unexpected response status: ${response.status}`);
+    //     } catch (e) {
+    //         throw new Error(`CalDavClient.ListEventsInTimRange: ${e.message}. `);
+    //     }
+    // };
+
+    private parseListOfEvents = async (responseData: string): Promise<Record<string, CalendarComponent>[]> => {
         const eventsData = await this.parser.parseListOfEvents(responseData);
 
         const events: Record<string, CalendarComponent>[] = [];
@@ -204,7 +202,6 @@ export class DefaultCalDavClient implements CalDavClient {
                 events.push(event);
             }
         }
-        console.debug(`${method}: events successfully parsed.`);
         return events;
     };
 
