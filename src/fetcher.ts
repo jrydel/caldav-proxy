@@ -6,14 +6,14 @@ import { CalDavParser, DefaultCalDavParser } from './caldav/caldav-parser.js';
 import { CaldavConfig } from './types.js';
 
 interface CalDavClient {
-    // getEventByUrl(eventUrl: string): Promise<ICAL.Event>;
-    // getEventByUid(eventUid: string): Promise<ICAL.Event>;
 
-    // deleteEvent(eventUid: string): Promise<void>;
+    getEventByUid(eventUid: string): Promise<Record<string, CalendarComponent>>;
 
     getEvents(): Promise<Record<string, CalendarComponent>[]>;
 
     getEventsBetween(startDate: Date, endDate?: Date): Promise<Record<string, CalendarComponent>[]>;
+
+    // deleteEvent(eventUid: string): Promise<void>;
 
     // createEvent(eventUrl: string,
     //     id: string,
@@ -49,51 +49,43 @@ export class DefaultCalDavClient implements CalDavClient {
         this.parser = new DefaultCalDavParser();
     }
 
-    // getEventByUrl = async (eventUrl: string): Promise<ical.FullCalendar> => {
-    //     try {
-    //         const response = await this.service.getEventByUrl(eventUrl);
+    getEventByUid = async (eventUid: string): Promise<Record<string, CalendarComponent>> => {
+        try {
+            const response = await this.service.getEventByUid(eventUid);
+            if (response.status === 207) {
+                const eventData = await this.parser.parseEvent(await response.text());
+                return await ical.async.parseICS(eventData.data);
+            }
+            throw new Error(`Unexpected response status: ${response.status}`);
+        } catch (e) {
+            throw new Error(`CalDavClient.GetEventByUid: ${e.message}. `);
+        }
+    };
 
-    //         if (response.status === 200) {
-    //             const calData = ical.parseICS(await response.text());
-    //             // const comp = new ICAL.Component(calData);
-    //             // const vevent = comp.getFirstSubcomponent('vevent');
+    getEvents = async (): Promise<Record<string, CalendarComponent>[]> => {
+        try {
+            const response = await this.service.getEvents();
+            if (response.status === 207) {
+                return await this.parseListOfEvents(await response.text(), 'ListAllEvents');
+            }
+            throw new Error(`Unexpected response status: ${response.status}`);
+        } catch (e) {
+            throw new Error(`CalDavClient.ListAllEvents: ${e.message}. `);
+        }
+    };
 
-    //             // const event = new ICAL.Event(vevent);
-    //             // event.component.addPropertyWithValue('url', eventUrl);
-    //             // console.log(`CalDavClient.GetEvent: Successfully got event ${event.uid}. `);
-    //             return calData;
-    //         }
-    //         throw new Error(`Unexpected response status: ${response.status}`);
-    //     } catch (e) {
-    //         throw new Error(`CalDavClient.GetEventByUrl: ${e.message}. `);
-    //     }
-    // };
+    getEventsBetween = async (startDate: Date, endDate?: Date): Promise<Record<string, CalendarComponent>[]> => {
+        try {
+            const response = await this.service.getEventsBetween(startDate, endDate);
+            if (response.status === 207) {
+                return this.parseListOfEvents(await response.text(), 'ListEventsInTimeRange');
+            }
+            throw new Error(`Unexpected response status: ${response.status}`);
+        } catch (e) {
+            throw new Error(`CalDavClient.ListEventsInTimRange: ${e.message}. `);
+        }
+    };
 
-    // getEventByUid = async (eventUid: string): Promise<ICAL.Event> => {
-    //     try {
-    //         const response = await this.service.getEventByUid(eventUid);
-    //         if (response.status === 207) {
-    //             const parsedData = await this.parser.parseEvent(await response.text());
-
-    //             if (!parsedData) {
-    //                 throw new Error();
-    //             }
-
-    //             const calData = ICAL.parse(parsedData.data);
-    //             const comp = new ICAL.Component(calData);
-    //             const vevent = comp.getFirstSubcomponent('vevent');
-
-    //             const event = new ICAL.Event(vevent);
-    //             const urlParts = parsedData.url.split('/');
-    //             event.component.addPropertyWithValue('url', urlParts[urlParts.length - 1]);
-    //             console.info(`CalDavClient.GetEvent: Successfully got event ${event.uid}. `);
-    //             return event;
-    //         }
-    //         throw new Error(`Unexpected response status: ${response.status}`);
-    //     } catch (e) {
-    //         throw new Error(`CalDavClient.GetEventByUid: ${e.message}. `);
-    //     }
-    // };
 
     // deleteEvent = async (eventUrl: string): Promise<void> => {
     //     try {
@@ -108,32 +100,6 @@ export class DefaultCalDavClient implements CalDavClient {
     //         throw new Error(`CalDavClient.DeleteEvent: ${e.message}. `);
     //     }
     // };
-
-    getEvents = async (): Promise<Record<string, CalendarComponent>[]> => {
-        try {
-            const response = await this.service.listAllEvents();
-
-            if (response.status === 207) {
-                return await this.parseListOfEvents(await response.text(), 'ListAllEvents');
-            }
-            throw new Error(`Unexpected response status: ${response.status}`);
-        } catch (e) {
-            throw new Error(`CalDavClient.ListAllEvents: ${e.message}. `);
-        }
-    };
-
-    getEventsBetween = async (startDate: Date, endDate?: Date): Promise<Record<string, CalendarComponent>[]> => {
-        try {
-            const response = await this.service.listEventsInTimeRange(startDate, endDate);
-
-            if (response.status === 207) {
-                return this.parseListOfEvents(await response.text(), 'ListEventsInTimeRange');
-            }
-            throw new Error(`Unexpected response status: ${response.status}`);
-        } catch (e) {
-            throw new Error(`CalDavClient.ListEventsInTimRange: ${e.message}. `);
-        }
-    };
 
     // multiGetEvents = async (eventUrls: string[]): Promise<ICAL.Event[]> => {
     //     try {

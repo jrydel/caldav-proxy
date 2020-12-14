@@ -5,7 +5,7 @@ import { CaldavEvent } from '../types';
 export interface CalDavParser {
     parseListOfEvents(responseData: string): Promise<CaldavEvent[]>;
 
-    parseEvent(responseData: string): Promise<CaldavEvent | null>;
+    parseEvent(responseData: string): Promise<CaldavEvent>;
 }
 
 const STATUS_OK = 'HTTP/1.1 200 OK';
@@ -33,12 +33,12 @@ export class DefaultCalDavParser implements CalDavParser {
         }
     };
 
-    parseEvent = async (responseData: string): Promise<CaldavEvent | null> => {
+    parseEvent = async (responseData: string): Promise<CaldavEvent> => {
         try {
             const xml = await parseStringPromise(responseData);
             const url = xml['D:multistatus']['D:response'][0]['D:href'][0];
             const status = xml['D:multistatus']['D:response'][0]['D:propstat'][0]['D:status'][0];
-            const data = xml['D:multistatus']['D:response'][0]['D:propstat'][0]['D:prop'][0]['cal:calendar-data'][0];
+            const data = xml['D:multistatus']['D:response'][0]['D:propstat'][0]['D:prop'][0]['C:calendar-data'][0];
 
             if (url && status === STATUS_OK && data) {
                 return { url: url, status: status, data: data };
