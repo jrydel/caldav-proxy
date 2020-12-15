@@ -7,6 +7,10 @@ const app = express();
 
 const corsMiddleware = cors({ origin: 'http://localhost:3000', optionsSuccessStatus: 200 });
 app.use(corsMiddleware);
+app.use((req: Request, _res: Response, next: () => void) => {
+  console.log(req.url);
+  next();
+})
 
 app.get('/getEvent', async (req: Request, res: Response) => {
   const { url, auth, id } = req.query;

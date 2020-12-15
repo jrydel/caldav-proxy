@@ -67,7 +67,6 @@ const parseEvents = async (responseData: string): Promise<Event[]> => {
                     const data = event[key];
                     if (data.type == 'VEVENT') {
                         const temp = data as CustomVEvent;
-                        console.log(temp);
                         events.push({
                             id: temp.uid,
                             name: temp.summary,
