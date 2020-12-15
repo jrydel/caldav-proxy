@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 
-import { deleteEvent, getEventByUid, getEvents } from './fetcher.js';
+import { deleteEvent, getEventByUid, getEvents, getEventsBetween } from './fetcher.js';
 
 const app = express();
 
@@ -39,7 +39,7 @@ app.get('/getEventsBetween', async (req: Request, res: Response) => {
   }
 
   try {
-    const events = await getEvents({ url: url as string, auth: auth as string });
+    const events = await getEventsBetween({ url: url as string, auth: auth as string }, new Date(start as string), new Date(end as string));
     res.status(200).json(events);
   } catch (e) {
     res.status(500).json(e.message);

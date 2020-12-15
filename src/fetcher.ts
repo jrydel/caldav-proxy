@@ -2,7 +2,7 @@ import ical, { CalendarComponent } from 'node-ical';
 import { CaldavParserImpl } from './caldav/caldav-parser.js';
 import { CaldavFetcherImpl } from './caldav/caldav-service.js';
 
-import { CaldavConfig } from './types.js';
+import { CaldavConfig, CustomVEvent, Event, Person } from './types.js';
 
 const parser = new CaldavParserImpl();
 const fetcher = new CaldavFetcherImpl();
@@ -20,7 +20,7 @@ export const getEventByUid = async (config: CaldavConfig, eventUid: string): Pro
     }
 };
 
-export const getEvents = async (config: CaldavConfig): Promise<Record<string, CalendarComponent>[]> => {
+export const getEvents = async (config: CaldavConfig): Promise<Event[]> => {
     try {
         const response = await fetcher.fetchEvents(config);
         if (response.status === 207) {
@@ -32,7 +32,7 @@ export const getEvents = async (config: CaldavConfig): Promise<Record<string, Ca
     }
 };
 
-export const getEventsBetween = async (config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Record<string, CalendarComponent>[]> => {
+export const getEventsBetween = async (config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Event[]> => {
     try {
         const response = await fetcher.fetchEventsBetween(config, startDate, endDate);
         if (response.status === 207) {
@@ -56,17 +56,57 @@ export const deleteEvent = async (config: CaldavConfig, eventUrl: string): Promi
     }
 };
 
-const parseEvents = async (responseData: string): Promise<Record<string, CalendarComponent>[]> => {
+const parseEvents = async (responseData: string): Promise<Event[]> => {
     const eventsData = await parser.parseCalEvents(responseData);
-    const events: Record<string, CalendarComponent>[] = [];
+    const events: Event[] = [];
     if (eventsData.length) {
         for (const eventData of eventsData) {
             const event = await ical.async.parseICS(eventData.data);
-            events.push(event);
+            for (const key in event) {
+                if (event.hasOwnProperty(key)) {
+                    const data = event[key];
+                    if (data.type == 'VEVENT') {
+                        const temp = data as CustomVEvent;
+                        console.log(temp);
+                        events.push({
+                            id: temp.uid,
+                            name: temp.summary,
+                            start: new Date(temp.start.toUTCString()),
+                            end: new Date(temp.end.toUTCString()),
+                            organizer: parsePerson(temp.organizer),
+                            attendee: parsePersons(temp.attendee)
+                        });
+                    }
+                }
+            }
         }
     }
     return events;
 };
+
+const parsePerson = (data: any) => {
+    if (data?.params?.CN && data?.val) {
+        if (data.val) {
+            return { name: data.params?.CN, mail: data.val?.replace('mailto:', '') };
+        }
+    }
+    return null;
+}
+
+const parsePersons = (data: any) => {
+    const result: Person[] = [];
+    if (data) {
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const person = parsePerson(data[key]);
+                if (person) {
+                    result.push(person);
+                }
+            }
+        }
+    }
+    return result;
+}
 
 
 // createEvent = async (eventUrl: string, id: string, referenceIds: string[], title: string, description: string, location: string, startDate: ICAL.TimeJsonData, endDate: ICAL.TimeJsonData, attendees: Attendee[], categories: string[]): Promise<void> => {

@@ -1,3 +1,5 @@
+import { VEvent } from "node-ical";
+
 export interface CaldavConfig {
     url: string;
     auth: string;
@@ -9,12 +11,9 @@ export interface CaldavEvent {
     data: string;
 }
 
-export type AtendeeStatus = 'ATTENDEE_STATUS_NEEDS_ACTION' | 'ATTENDEE_STATUS_ACCEPTED' | 'ATTENDEE_STATUS_DECLINED' | 'ATTENDEE_STATUS_TENTATIVE';
-
-export interface Attendee {
-    email: string;
-    displayName?: string;
-    status?: AtendeeStatus;
+export interface Person {
+    mail: string;
+    name: string;
 }
 
 export interface Event {
@@ -22,6 +21,10 @@ export interface Event {
     name: string;
     start: Date;
     end: Date;
-    organiser: { id: string, name: string };
-    attendee: { id: string, name: string }[];
+    organizer: Person | null;
+    attendee: Person[];
+}
+
+export interface CustomVEvent extends VEvent {
+    attendee: any;
 }
