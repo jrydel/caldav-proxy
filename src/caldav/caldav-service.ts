@@ -4,20 +4,20 @@ import moment from 'moment';
 import { CaldavConfig } from '../types';
 
 interface CaldavFetcher {
-    fetchEventByUid(config: CaldavConfig, eventUid: string): Promise<Response>;
+    fetchEventByUid(config: CaldavConfig, id: string): Promise<Response>;
 
     fetchEvents(config: CaldavConfig): Promise<Response>;
 
     fetchEventsBetween(config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Response>;
 
-    fetchUpdateEvent(config: CaldavConfig, eventData: string, eventUid: string): Promise<Response>;
+    fetchUpdateEvent(config: CaldavConfig, eventData: string, id: string): Promise<Response>;
 
-    fetchDeleteEvent(config: CaldavConfig, eventUid: string): Promise<Response>;
+    fetchDeleteEvent(config: CaldavConfig, id: string): Promise<Response>;
 }
 
 export class CaldavFetcherImpl implements CaldavFetcher {
 
-    fetchEventByUid = async (config: CaldavConfig, eventUid: string): Promise<Response> => {
+    fetchEventByUid = async (config: CaldavConfig, id: string): Promise<Response> => {
         // Method for getting single event
         // Response status upon successfull request is 200
         const url = `${config.url}`;
@@ -31,7 +31,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             '<C:comp-filter name="VCALENDAR">' +
             '<C:comp-filter name="VEVENT">' +
             '<C:prop-filter name="UID">' +
-            `<C:text-match collation="i;octet">${eventUid}</C:text-match>` +
+            `<C:text-match collation="i;octet">${id}</C:text-match>` +
             '</C:prop-filter>' +
             '</C:comp-filter>' +
             '</C:comp-filter>' +
@@ -41,7 +41,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         return await fetch(url, {
             method: 'REPORT',
             headers: {
-                'Authorization': `basic ${config.auth}`,
+                'Authorization': `Basic ${config.auth}`,
                 'Content-Type': 'text/xml; charset=utf-8',
                 'Depth': '1'
             },
@@ -68,7 +68,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         return await fetch(config.url, {
             method: 'REPORT',
             headers: {
-                'Authorization': `basic ${config.auth}`,
+                'Authorization': `Basic ${config.auth}`,
                 'Content-type': 'application/xml; charset=utf-8',
                 'Prefer': 'return-minimal',
                 'Depth': '1',
@@ -101,7 +101,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         return await fetch(config.url, {
             method: 'REPORT',
             headers: {
-                'Authorization': `basic ${config.auth}`,
+                'Authorization': `Basic ${config.auth}`,
                 'Content-type': 'application/xml; charset=utf-8',
                 'Prefer': 'return-minimal',
                 'Depth': '1',
@@ -110,30 +110,30 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         });
     };
 
-    fetchUpdateEvent = async (config: CaldavConfig, eventData: string, eventUid: string): Promise<Response> => {
+    fetchUpdateEvent = async (config: CaldavConfig, eventData: string, id: string): Promise<Response> => {
         // Method for creating or updating single event
         // Response status upon successfull request 204 - updated or 201 - created
-        const url = `${config.url}${eventUid}`;
+        const url = `${config.url}${id}`;
 
         return await fetch(url, {
             method: 'PUT',
             headers: {
-                'Authorization': `basic ${config.auth}`,
+                'Authorization': `Basic ${config.auth}`,
                 'Content-Type': 'text/calendar; charset=utf-8'
             },
             body: eventData
         });
     };
 
-    fetchDeleteEvent = async (config: CaldavConfig, eventUid: string): Promise<Response> => {
+    fetchDeleteEvent = async (config: CaldavConfig, id: string): Promise<Response> => {
         // Method for deleting single event
         // Response status upon successfull request is 204
-        const url = `${config.url}${eventUid}`;
+        const url = `${config.url}${id}`;
 
         return await fetch(url, {
             method: 'DELETE',
             headers: {
-                'Authorization': `basic ${config.auth}`,
+                'Authorization': `Basic ${config.auth}`,
             },
         });
     };
