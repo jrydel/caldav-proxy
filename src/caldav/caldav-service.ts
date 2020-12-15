@@ -1,7 +1,12 @@
-import fetch, { Response } from 'node-fetch';
+import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 import moment from 'moment';
 
-import { CaldavConfig } from '../types';
+import { CaldavConfig, Event } from '../types';
+
+const fetchRequest = async (url: RequestInfo, options: RequestInit): Promise<Response> => {
+    console.log("OUTGOING", { timestamp: new Date(), url: url, method: options.method, headers: options.headers });
+    return await fetch(url, options);
+}
 
 interface CaldavFetcher {
     fetchEventByUid(config: CaldavConfig, id: string): Promise<Response>;
@@ -10,7 +15,7 @@ interface CaldavFetcher {
 
     fetchEventsBetween(config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Response>;
 
-    fetchUpdateEvent(config: CaldavConfig, eventData: string, id: string): Promise<Response>;
+    fetchCreateUpdateEvent(config: CaldavConfig, event: Event): Promise<Response>;
 
     fetchDeleteEvent(config: CaldavConfig, id: string): Promise<Response>;
 }
@@ -38,7 +43,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             '</C:filter>' +
             '</C:calendar-query>`';
 
-        return await fetch(url, {
+        return await fetchRequest(url, {
             method: 'REPORT',
             headers: {
                 'Authorization': `Basic ${config.auth}`,
@@ -65,7 +70,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             '</c:filter>' +
             '</c:calendar-query>';
 
-        return await fetch(config.url, {
+        return await fetchRequest(config.url, {
             method: 'REPORT',
             headers: {
                 'Authorization': `Basic ${config.auth}`,
@@ -98,7 +103,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             '</c:filter>' +
             '</c:calendar-query>';
 
-        return await fetch(config.url, {
+        return await fetchRequest(config.url, {
             method: 'REPORT',
             headers: {
                 'Authorization': `Basic ${config.auth}`,
@@ -110,27 +115,42 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         });
     };
 
-    fetchUpdateEvent = async (config: CaldavConfig, eventData: string, id: string): Promise<Response> => {
+    fetchCreateUpdateEvent = async (config: CaldavConfig, event: Event): Promise<Response> => {
         // Method for creating or updating single event
         // Response status upon successfull request 204 - updated or 201 - created
-        const url = `${config.url}${id}`;
+        const url = `${config.url}${event.id}.ics`;
 
-        return await fetch(url, {
+        const format_allDay = "YYYYMMDDTHHmms";
+        const format_singleEvent = "YYYYMMDD";
+
+        const data = 'BEGIN:VCALENDAR\n' +
+            'BEGIN:VEVENT\n' +
+            `UID:${event.id}\n` +
+            `SUMMARY:${event.name}\n` +
+            `DTSTART:${moment(event.start).hour() === 0 ? 'VALUE=DATE:' + moment(event.start).format(format_singleEvent) : moment(event.start).format(format_allDay)}Z\n` +
+            `DTEND:${moment(event.end).hour() === 0 ? 'VALUE=DATE:' + moment(event.end).add(1, 'days').format(format_singleEvent) : moment(event.end).format(format_allDay)}Z\n` +
+            `ORGANIZER;CN=${event.organizer?.name}:mailto:${event.organizer?.mail}\n` +
+            'END:VEVENT\n' +
+            'END:VCALENDAR\n';
+
+        console.log(data);
+
+        return await fetchRequest(url, {
             method: 'PUT',
             headers: {
                 'Authorization': `Basic ${config.auth}`,
                 'Content-Type': 'text/calendar; charset=utf-8'
             },
-            body: eventData
+            body: data
         });
     };
 
     fetchDeleteEvent = async (config: CaldavConfig, id: string): Promise<Response> => {
         // Method for deleting single event
         // Response status upon successfull request is 204
-        const url = `${config.url}${id}`;
+        const url = `${config.url}${id}.ics`;
 
-        return await fetch(url, {
+        return await fetchRequest(url, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Basic ${config.auth}`,
