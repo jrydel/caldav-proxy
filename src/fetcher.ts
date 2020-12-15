@@ -7,14 +7,14 @@ import { CaldavConfig, CustomVEvent, Event, Person } from './types.js';
 const parser = new CaldavParserImpl();
 const fetcher = new CaldavFetcherImpl();
 
-export const getEventByUid = async (config: CaldavConfig, eventUid: string): Promise<Record<string, CalendarComponent>> => {
+export const getEventByUid = async (config: CaldavConfig, id: string): Promise<Record<string, CalendarComponent>> => {
     try {
-        const response = await fetcher.fetchEventByUid(config, eventUid);
+        const response = await fetcher.fetchEventByUid(config, id);
         if (response.status === 207) {
             const eventData = await parser.parseCalEvent(await response.text());
             return await ical.async.parseICS(eventData.data);
         }
-        throw new Error(`Unexpected response status: ${response.status}`);
+        throw new Error(`Unexpected response status: ${response.status}, message: ${await response.text()}`);
     } catch (e) {
         throw new Error(`CalDavClient.GetEventByUid: ${e.message}. `);
     }
@@ -26,7 +26,7 @@ export const getEvents = async (config: CaldavConfig): Promise<Event[]> => {
         if (response.status === 207) {
             return await parseEvents(await response.text());
         }
-        throw new Error(`Unexpected response status: ${response.status}`);
+        throw new Error(`Unexpected response status: ${response.status}, message: ${await response.text()}`);
     } catch (e) {
         throw new Error(`CalDavClient.ListAllEvents: ${e.message}. `);
     }
@@ -38,19 +38,31 @@ export const getEventsBetween = async (config: CaldavConfig, startDate: Date, en
         if (response.status === 207) {
             return parseEvents(await response.text());
         }
-        throw new Error(`Unexpected response status: ${response.status}`);
+        throw new Error(`Unexpected response status: ${response.status}, message: ${await response.text()}`);
     } catch (e) {
         throw new Error(`CalDavClient.ListEventsInTimRange: ${e.message}. `);
     }
 };
 
-export const deleteEvent = async (config: CaldavConfig, eventUrl: string): Promise<void> => {
+export const createUpdateEvent = async (config: CaldavConfig, event: Event): Promise<void> => {
     try {
-        const response = await fetcher.fetchDeleteEvent(config, eventUrl);
+        const response = await fetcher.fetchCreateUpdateEvent(config, event);
+        if (response.status === 201) {
+            return;
+        }
+        throw new Error(`Unexpected response status: ${response.status}, message: ${await response.text()}`);
+    } catch (e) {
+        throw new Error(`CalDavClient.CreateEvent: ${e.message}. `);
+    }
+};
+
+export const deleteEvent = async (config: CaldavConfig, id: string): Promise<void> => {
+    try {
+        const response = await fetcher.fetchDeleteEvent(config, id);
         if (response.status === 204) {
             return;
         }
-        throw new Error(`Unexpected response status: ${response.status}`);
+        throw new Error(`Unexpected response status: ${response.status}, message: ${await response.text()}`);
     } catch (e) {
         throw new Error(`CalDavClient.DeleteEvent: ${e.message}. `);
     }
@@ -67,11 +79,12 @@ const parseEvents = async (responseData: string): Promise<Event[]> => {
                     const data = event[key];
                     if (data.type == 'VEVENT') {
                         const temp = data as CustomVEvent;
+                        console.log(temp);
                         events.push({
                             id: temp.uid,
                             name: temp.summary,
-                            start: new Date(temp.start.toUTCString()),
-                            end: new Date(temp.end.toUTCString()),
+                            start: new Date(temp.start.toString()),
+                            end: new Date(temp.end.toString()),
                             organizer: parsePerson(temp.organizer),
                             attendee: parsePersons(temp.attendee)
                         });
@@ -107,49 +120,6 @@ const parsePersons = (data: any) => {
     return result;
 }
 
-
-// createEvent = async (eventUrl: string, id: string, referenceIds: string[], title: string, description: string, location: string, startDate: ICAL.TimeJsonData, endDate: ICAL.TimeJsonData, attendees: Attendee[], categories: string[]): Promise<void> => {
-//     try {
-//         // wrap request data in VCALENDAR
-//         const calendar = new ICAL.Component('vcalendar');
-//         const event = new ICAL.Event(calendar);
-
-//         event.component.addPropertyWithValue('BEGIN', 'VEVENT');
-//         event.uid = id;
-//         event.summary = title;
-//         event.description = description;
-//         event.location = location;
-//         event.startDate = new ICAL.Time(startDate);
-//         event.endDate = new ICAL.Time(endDate);
-
-//         if (categories.length) {
-//             for (const category of categories) {
-//                 const categoriesProperty = new ICAL.Property('categories');
-//                 categoriesProperty.setValue(category);
-//                 event.component.addProperty(categoriesProperty);
-//             }
-//         }
-
-//         if (attendees.length) {
-//             this.addAttendees(attendees, event);
-//         }
-
-//         if (referenceIds.length) {
-//             event.component.addPropertyWithValue('referenceids', referenceIds.join(','));
-//         }
-
-//         event.component.addPropertyWithValue('END', 'VEVENT');
-//         let eventString = event.toString();
-
-//         // change ATTENDEE: to ATTENDEE;
-//         eventString = eventString.replace(/ATTENDEE:/gi, 'ATTENDEE;');
-
-//         await this.service.createUpdateEvent(eventString, eventUrl);
-//         console.info(`CalDavClient.CreateUpdateEvent: Successfully created event ${id}. `);
-//     } catch (e) {
-//         throw new Error(`CalDavClient.CreateEvent: ${e.message}. `);
-//     }
-// };
 
 // updateEvent = async (eventUrl: string, event: ICAL.Event, referenceIds: string[], title: string, description: string, location: string, startDate: ICAL.TimeJsonData, endDate: ICAL.TimeJsonData, attendees: Attendee[], categories: string[]): Promise<void> => {
 //     try {
