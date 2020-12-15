@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 
-import { deleteEvent, getEventByUid, getEvents, getEventsBetween } from './fetcher.js';
+import { getEventByUid, getEvents, getEventsBetween, createUpdateEvent, deleteEvent } from './fetcher.js';
 
 const app = express();
 
@@ -9,7 +9,8 @@ const corsMiddleware = cors({ origin: 'http://localhost:3000', optionsSuccessSta
 app.use(corsMiddleware);
 app.use(express.json());
 app.use((req: Request, _res: Response, next: () => void) => {
-  console.log(req.url, req.body);
+  console.log('########################################################');
+  console.log("INCOMMING", { timestamp: new Date(), url: req.originalUrl });
   next();
 });
 
@@ -46,6 +47,20 @@ app.post('/getEventsBetween', async (req: Request, res: Response) => {
   try {
     const events = await getEventsBetween(config, new Date(start as string), new Date(end as string));
     res.status(200).json(events);
+  } catch (e) {
+    res.status(500).json(e.message);
+  }
+});
+
+app.post('/createUpdateEvent', async (req: Request, res: Response) => {
+  const { config, event } = req.body;
+  if (!event) {
+    res.status(500).json({ 'message': 'Query params "event" must be valid Event.' });
+  }
+
+  try {
+    await createUpdateEvent(config, event);
+    res.status(200).send();
   } catch (e) {
     res.status(500).json(e.message);
   }
