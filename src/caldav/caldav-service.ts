@@ -13,7 +13,7 @@ interface CaldavFetcher {
 
     fetchEvents(config: CaldavConfig): Promise<Response>;
 
-    fetchEventsBetween(config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Response>;
+    fetchEventsBetween(config: CaldavConfig, startDate: number, endDate: number): Promise<Response>;
 
     fetchCreateUpdateEvent(config: CaldavConfig, event: Event): Promise<Response>;
 
@@ -82,12 +82,11 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         });
     };
 
-    fetchEventsBetween = async (config: CaldavConfig, startDate: Date, endDate?: Date): Promise<Response> => {
+    fetchEventsBetween = async (config: CaldavConfig, startDate: number, endDate: number): Promise<Response> => {
         // Method for getting events from calendar in certain time range
         // Response status upon successfull request is 207
         const startDateString = moment(startDate).utc().format('YYYYMMDD[T]HHmmss[Z]');
-        const endDateString = (endDate) ? moment(endDate).utc().format('YYYYMMDD[T]HHmmss[Z]') : null;
-        const endTimeRange = (endDateString) ? ` end="${endDateString}"` : '';
+        const endDateString = moment(endDate).utc().format('YYYYMMDD[T]HHmmss[Z]');
 
         const xml = '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">' +
             '<d:prop>' +
@@ -97,7 +96,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             '<c:filter>' +
             '<c:comp-filter name="VCALENDAR">' +
             '<c:comp-filter name="VEVENT">' +
-            `<c:time-range start="${startDateString}"${endTimeRange}/>` +
+            `<c:time-range start="${startDateString}" end="${endDateString}"/>` +
             '</c:comp-filter>' +
             '</c:comp-filter>' +
             '</c:filter>' +
@@ -120,20 +119,15 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         // Response status upon successfull request 204 - updated or 201 - created
         const url = `${config.url}${event.id}.ics`;
 
-        const format_allDay = "YYYYMMDDTHHmms";
-        const format_singleEvent = "YYYYMMDD";
-
         const data = 'BEGIN:VCALENDAR\n' +
             'BEGIN:VEVENT\n' +
             `UID:${event.id}\n` +
             `SUMMARY:${event.name}\n` +
-            `DTSTART:${moment(event.start).hour() === 0 ? 'VALUE=DATE:' + moment(event.start).format(format_singleEvent) : moment(event.start).format(format_allDay)}Z\n` +
-            `DTEND:${moment(event.end).hour() === 0 ? 'VALUE=DATE:' + moment(event.end).add(1, 'days').format(format_singleEvent) : moment(event.end).format(format_allDay)}Z\n` +
+            `DTSTART:${moment(event.start).format('YYYYMMDDTHHmms')}Z\n` +
+            `DTEND:${moment(event.end).format('YYYYMMDDTHHmms')}Z\n` +
             `ORGANIZER;CN=${event.organizer?.name}:mailto:${event.organizer?.mail}\n` +
             'END:VEVENT\n' +
             'END:VCALENDAR\n';
-
-        console.log(data);
 
         return await fetchRequest(url, {
             method: 'PUT',

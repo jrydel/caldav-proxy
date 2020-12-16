@@ -13,9 +13,10 @@ export interface CaldavParser {
 export class CaldavParserImpl implements CaldavParser {
 
     parseCalEvents = async (responseData: string): Promise<CaldavEvent[]> => {
+        const events = [];
         try {
-            const events = [];
             const xml = await parseStringPromise(responseData);
+
             const response = xml['D:multistatus']['D:response'];
 
             for (const obj of response) {
@@ -29,7 +30,8 @@ export class CaldavParserImpl implements CaldavParser {
             }
             return events;
         } catch (e) {
-            throw new Error(`Error parsing events: ${e}`)
+            // throw new Error(`Error parsing events: ${e}`);
+            return events;
         }
     }
 

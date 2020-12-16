@@ -45,7 +45,7 @@ app.post('/getEventsBetween', async (req: Request, res: Response) => {
   }
 
   try {
-    const events = await getEventsBetween(config, new Date(start as string), new Date(end as string));
+    const events = await getEventsBetween(config, start, end);
     res.status(200).json(events);
   } catch (e) {
     res.status(500).json(e.message);
