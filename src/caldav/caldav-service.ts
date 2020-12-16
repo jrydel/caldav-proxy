@@ -13,7 +13,7 @@ interface CaldavFetcher {
 
     fetchEvents(config: CaldavConfig): Promise<Response>;
 
-    fetchEventsBetween(config: CaldavConfig, startDate: number, endDate: number): Promise<Response>;
+    fetchEventsBetween(config: CaldavConfig, startDate: string, endDate: string): Promise<Response>;
 
     fetchCreateUpdateEvent(config: CaldavConfig, event: Event): Promise<Response>;
 
@@ -82,7 +82,7 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         });
     };
 
-    fetchEventsBetween = async (config: CaldavConfig, startDate: number, endDate: number): Promise<Response> => {
+    fetchEventsBetween = async (config: CaldavConfig, startDate: string, endDate: string): Promise<Response> => {
         // Method for getting events from calendar in certain time range
         // Response status upon successfull request is 207
         const startDateString = moment(startDate).utc().format('YYYYMMDD[T]HHmmss[Z]');
