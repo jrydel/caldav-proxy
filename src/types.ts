@@ -19,8 +19,8 @@ export interface Person {
 export interface Event {
     id: string;
     name: string;
-    start: Date;
-    end: Date;
+    start: string;
+    end: string;
     organizer: Person | null;
     attendee: Person[];
 }

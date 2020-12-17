@@ -3,6 +3,8 @@ import moment from 'moment';
 
 import { CaldavConfig, Event } from '../types';
 
+const caldavFormat = 'YYYYMMDD[T]HHmmss[Z]';
+
 const fetchRequest = async (url: RequestInfo, options: RequestInit): Promise<Response> => {
     console.log("OUTGOING", { timestamp: new Date(), url: url, method: options.method, headers: options.headers });
     return await fetch(url, options);
@@ -82,11 +84,11 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         });
     };
 
-    fetchEventsBetween = async (config: CaldavConfig, startDate: string, endDate: string): Promise<Response> => {
+    fetchEventsBetween = async (config: CaldavConfig, startUTC: string, endUTC: string): Promise<Response> => {
         // Method for getting events from calendar in certain time range
         // Response status upon successfull request is 207
-        const startDateString = moment(startDate).utc().format('YYYYMMDD[T]HHmmss[Z]');
-        const endDateString = moment(endDate).utc().format('YYYYMMDD[T]HHmmss[Z]');
+        const startDateString = new Date(startUTC).toISOString();
+        const endDateString = new Date(endUTC).toISOString();
 
         const xml = '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">' +
             '<d:prop>' +
@@ -123,11 +125,13 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             'BEGIN:VEVENT\n' +
             `UID:${event.id}\n` +
             `SUMMARY:${event.name}\n` +
-            `DTSTART:${moment(event.start).format('YYYYMMDDTHHmms')}Z\n` +
-            `DTEND:${moment(event.end).format('YYYYMMDDTHHmms')}Z\n` +
+            `DTSTART:${moment.utc(event.start).format(caldavFormat)}\n` +
+            `DTEND:${moment.utc(event.end).format(caldavFormat)}\n` +
             `ORGANIZER;CN=${event.organizer?.name}:mailto:${event.organizer?.mail}\n` +
             'END:VEVENT\n' +
             'END:VCALENDAR\n';
+
+        console.log(data);
 
         return await fetchRequest(url, {
             method: 'PUT',
