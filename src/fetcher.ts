@@ -47,7 +47,7 @@ export const getEventsBetween = async (config: CaldavConfig, startUTC: string, e
 export const createUpdateEvent = async (config: CaldavConfig, event: Event): Promise<void> => {
     try {
         const response = await fetcher.fetchCreateUpdateEvent(config, event);
-        if (response.status === 201) {
+        if (response.status === 201 || response.status === 204) {
             return;
         }
         throw new Error(`Unexpected response status: ${response.status}, message: ${await response.text()}`);

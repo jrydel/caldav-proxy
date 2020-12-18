@@ -131,8 +131,6 @@ export class CaldavFetcherImpl implements CaldavFetcher {
             'END:VEVENT\n' +
             'END:VCALENDAR\n';
 
-        console.log(data);
-
         return await fetchRequest(url, {
             method: 'PUT',
             headers: {
