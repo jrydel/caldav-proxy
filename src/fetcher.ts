@@ -1,4 +1,5 @@
 import ical, { CalendarComponent } from 'node-ical';
+
 import { CaldavParserImpl } from './caldav/caldav-parser.js';
 import { CaldavFetcherImpl } from './caldav/caldav-service.js';
 
@@ -118,42 +119,3 @@ const parsePersons = (data: any) => {
     }
     return result;
 }
-
-
-// updateEvent = async (eventUrl: string, event: ICAL.Event, referenceIds: string[], title: string, description: string, location: string, startDate: ICAL.TimeJsonData, endDate: ICAL.TimeJsonData, attendees: Attendee[], categories: string[]): Promise<void> => {
-//     try {
-//         event.summary = title;
-//         event.description = description;
-//         event.location = location;
-//         event.startDate = new ICAL.Time(startDate);
-//         event.endDate = new ICAL.Time(endDate);
-
-//         event.component.removeAllProperties('categories');
-//         event.component.removeAllProperties('attendee');
-//         event.component.removeAllProperties('referenceids');
-
-//         if (categories.length) {
-//             for (const category of categories) {
-//                 const categoriesProperty = new ICAL.Property('categories');
-//                 categoriesProperty.setValue(category);
-//                 event.component.addProperty(categoriesProperty);
-//             }
-//         }
-//         if (attendees.length) {
-//             this.addAttendees(attendees, event);
-//         }
-
-//         if (referenceIds.length) {
-//             event.component.addPropertyWithValue('referenceids', referenceIds.join(','));
-//         }
-
-//         // change ATTENDEE: to ATTENDEE;
-//         let eventString = event.toString();
-//         eventString = eventString.replace(/ATTENDEE:/gi, 'ATTENDEE;');
-
-//         await this.service.createUpdateEvent('BEGIN:VCALENDAR\r\n' + eventString + '\r\nEND:VCALENDAR', eventUrl);
-//     } catch (e) {
-//         throw new Error(`CalDavClient.UpdateEvent: ${e.message}. `);
-//     }
-// };
-
