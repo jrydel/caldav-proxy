@@ -1,9 +1,7 @@
-import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 import moment from 'moment';
+import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 
 import { CaldavConfig, Event } from '../types';
-
-const caldavFormat = 'YYYYMMDD[T]HHmmss[Z]';
 
 const fetchRequest = async (url: RequestInfo, options: RequestInit): Promise<Response> => {
     console.log("OUTGOING", { timestamp: new Date(), url: url, method: options.method, headers: options.headers });
@@ -84,11 +82,11 @@ export class CaldavFetcherImpl implements CaldavFetcher {
         });
     };
 
-    fetchEventsBetween = async (config: CaldavConfig, startUTC: string, endUTC: string): Promise<Response> => {
+    fetchEventsBetween = async (config: CaldavConfig, start: string, end: string): Promise<Response> => {
         // Method for getting events from calendar in certain time range
         // Response status upon successfull request is 207
-        const startDateString = new Date(startUTC).toISOString();
-        const endDateString = new Date(endUTC).toISOString();
+        const startDateString = moment.utc(start).toISOString();
+        const endDateString = moment.utc(end).toISOString();
 
         const xml = '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">' +
             '<d:prop>' +
@@ -119,6 +117,8 @@ export class CaldavFetcherImpl implements CaldavFetcher {
     fetchCreateUpdateEvent = async (config: CaldavConfig, event: Event): Promise<Response> => {
         // Method for creating or updating single event
         // Response status upon successfull request 204 - updated or 201 - created
+        const caldavFormat = 'YYYYMMDD[T]HHmmss[Z]';
+
         const url = `${config.url}${event.id}.ics`;
 
         const data = 'BEGIN:VCALENDAR\n' +

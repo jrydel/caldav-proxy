@@ -33,9 +33,9 @@ export const getEvents = async (config: CaldavConfig): Promise<Event[]> => {
     }
 };
 
-export const getEventsBetween = async (config: CaldavConfig, startUTC: string, endUTC: string): Promise<Event[]> => {
+export const getEventsBetween = async (config: CaldavConfig, start: string, end: string): Promise<Event[]> => {
     try {
-        const response = await fetcher.fetchEventsBetween(config, startUTC, endUTC);
+        const response = await fetcher.fetchEventsBetween(config, start, end);
         if (response.status === 207) {
             return parseEvents(await response.text());
         }
@@ -80,6 +80,7 @@ const parseEvents = async (responseData: string): Promise<Event[]> => {
                     const data = event[key];
                     if (data.type == 'VEVENT') {
                         const temp = data as CustomVEvent;
+                        console.log(temp);
                         events.push({
                             id: temp.uid,
                             name: temp.summary,
