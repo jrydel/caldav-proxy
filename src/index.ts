@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import moment from 'moment';
 
 import { getEventByUid, getEvents, getEventsBetween, createUpdateEvent, deleteEvent } from './fetcher.js';
 
@@ -22,6 +23,18 @@ app.post('/getEvent', async (req: Request, res: Response) => {
 
   try {
     const event = await getEventByUid(config, id);
+    res.status(200).json(event);
+  } catch (e) {
+    res.status(500).json(e.message);
+  }
+});
+
+app.post('/getNearestEvent', async (req: Request, res: Response) => {
+  const { config } = req.body;
+  try {
+    const events = await getEvents(config);
+    const now = moment();
+    const event = events.filter(item => !moment(item.end).isBefore(now)).sort((a, b) => moment(a.start).diff(moment(b.start))).find(item => item);
     res.status(200).json(event);
   } catch (e) {
     res.status(500).json(e.message);
