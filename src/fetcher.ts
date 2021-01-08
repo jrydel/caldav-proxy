@@ -80,15 +80,16 @@ const parseEvents = async (responseData: string): Promise<Event[]> => {
                     const data = event[key];
                     if (data.type == 'VEVENT') {
                         const temp = data as CustomVEvent;
-                        console.log(temp);
-                        events.push({
+                        const e = {
                             id: temp.uid,
                             name: temp.summary,
                             start: temp.start.toISOString(),
                             end: temp.end.toISOString(),
                             organizer: parsePerson(temp.organizer),
-                            attendee: parsePersons(temp.attendee)
-                        });
+                            attendee: parsePersons(temp.attendee),
+                            repeat: parseRepeat(temp.rrule)
+                        };
+                        events.push(e);
                     }
                 }
             }
@@ -119,4 +120,8 @@ const parsePersons = (data: any) => {
         }
     }
     return result;
+}
+
+const parseRepeat = (data: any) => {
+    return data ? { start: data.origOptions.dtStart, end: data.origOptions.until, freq: data.origOptions.freq } : null;
 }

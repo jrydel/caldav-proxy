@@ -23,8 +23,10 @@ export interface Event {
     end: string;
     organizer: Person | null;
     attendee: Person[];
+    repeat: { start: string, end: string, freq: number } | null;
 }
 
 export interface CustomVEvent extends VEvent {
     attendee: any;
+    rrule: any;
 }
